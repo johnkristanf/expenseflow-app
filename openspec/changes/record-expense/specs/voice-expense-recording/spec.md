@@ -28,7 +28,7 @@ The AI pipeline in the Supabase Edge Function SHALL attempt to extract the follo
 
 #### Scenario: All entities present in one utterance
 - **WHEN** the transcript contains a recognisable amount, description, category or budget reference, and spending intent
-- **THEN** the AI SHALL call `propose_expense` with all resolved fields populated and return the proposal to the client
+- **THEN** the AI SHALL call `record_expense` with all resolved fields populated and return the proposal to the client
 
 #### Scenario: Implicit entity resolution via semantic inference
 - **WHEN** the transcript mentions a merchant or item (e.g., "Starbucks", "Shell gasoline") that semantically matches a user category or budget name/notes
@@ -46,7 +46,7 @@ The client SHALL maintain a transient `ExpenseDraft` JSON object in memory for t
 #### Scenario: Second turn carries draft context
 - **WHEN** the user answers a clarification question (e.g., says "210 pesos" after being asked "How much was the Starbucks coffee?")
 - **AND** the client sends the active `ExpenseDraft` (containing description, categoryId, budgetId, spendingType) together with the new transcript
-- **THEN** the Edge Function SHALL merge the user's answer into the draft fields and produce a completed `propose_expense` call, NOT start a new extraction from scratch
+- **THEN** the Edge Function SHALL merge the user's answer into the draft fields and produce a completed `record_expense` call, NOT start a new extraction from scratch
 
 #### Scenario: Draft is cleared on session end
 - **WHEN** the user confirms an expense, discards the session, or closes the voice modal
@@ -55,7 +55,7 @@ The client SHALL maintain a transient `ExpenseDraft` JSON object in memory for t
 ---
 
 ### Requirement: AI asks clarifying questions when entities cannot be resolved
-When one or more required fields (`amount`, `description`, `categoryId`, `budgetId`) cannot be resolved from the transcript and draft, the AI SHALL call `ask_clarification` instead of `propose_expense`, causing the system to ask the user a targeted follow-up question.
+When one or more required fields (`amount`, `description`, `categoryId`, `budgetId`) cannot be resolved from the transcript and draft, the AI SHALL call `ask_clarification` instead of `record_expense`, causing the system to ask the user a targeted follow-up question.
 
 #### Scenario: Amount is missing
 - **WHEN** the transcript mentions a merchant but no monetary amount, and the draft has no amount
@@ -74,7 +74,7 @@ When one or more required fields (`amount`, `description`, `categoryId`, `budget
 #### Scenario: Clarification answer is received
 - **WHEN** the user speaks or taps a clarification answer
 - **THEN** the client SHALL append the answer to the in-memory turn history, attach the current `ExpenseDraft`, and re-invoke the Edge Function pipeline
-- **AND** the pipeline SHALL attempt to resolve all remaining missing fields before issuing another `ask_clarification` or returning `propose_expense`
+- **AND** the pipeline SHALL attempt to resolve all remaining missing fields before issuing another `ask_clarification` or returning `record_expense`
 
 ---
 
@@ -82,7 +82,7 @@ When one or more required fields (`amount`, `description`, `categoryId`, `budget
 The client SHALL present a dark-theme interactive confirmation card showing the AI-proposed expense fields. No database write SHALL occur until the user explicitly confirms.
 
 #### Scenario: Confirmation card displayed
-- **WHEN** the AI returns a `propose_expense` result
+- **WHEN** the AI returns a `record_expense` result
 - **THEN** the client SHALL display a confirmation card with the following editable fields: amount, description, category (dropdown populated from user's categories), budget (dropdown populated from user's budgets showing remaining balance), spendingType (needs / wants toggle), and dateSpent
 
 #### Scenario: User edits a field before confirming
@@ -114,10 +114,10 @@ On user confirmation the system SHALL commit the expense to the database in a si
 ---
 
 ### Requirement: AI spoken feedback via Deepgram Aura TTS
-The Edge Function SHALL generate a short spoken summary using Deepgram Aura TTS after each successful `propose_expense` resolution and after each `ask_clarification` question, returning the audio to the client for playback.
+The Edge Function SHALL generate a short spoken summary using Deepgram Aura TTS after each successful `record_expense` resolution and after each `ask_clarification` question, returning the audio to the client for playback.
 
 #### Scenario: Proposal spoken summary
-- **WHEN** `propose_expense` is called with all required fields
+- **WHEN** `record_expense` is called with all required fields
 - **THEN** the Edge Function SHALL generate and return a TTS audio buffer summarising the proposed expense (e.g., "Got it! ₱210 for Starbucks coffee under Daily Food.")
 - **AND** the client SHALL play the audio before or while the confirmation card renders
 

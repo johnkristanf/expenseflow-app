@@ -75,7 +75,7 @@ The Edge Function provides OpenAI with exactly two tools and instructs it to cal
 
 | Tool | Called when |
 |------|------------|
-| `propose_expense` | All required fields are resolved (amount, description, at minimum) |
+| `record_expense` | All required fields are resolved (amount, description, at minimum) |
 | `ask_clarification` | Any required field is missing or ambiguous |
 
 `ask_clarification` returns: `{ question: string; missingEntity: string; suggestedOptions?: string[] }`.
@@ -118,11 +118,11 @@ If `budgetId` is null, only the INSERT runs. The RPC enforces RLS so only the au
 
 ### Decision 6: TTS Feedback via Deepgram Aura
 
-After every Edge Function response (whether `propose_expense` or `ask_clarification`), the function also returns a base64-encoded audio buffer synthesised by Deepgram Aura TTS. The client plays this using `expo-av`. The TTS call is non-blocking to the structured JSON response — both are returned in the same Edge Function response body:
+After every Edge Function response (whether `record_expense` or `ask_clarification`), the function also returns a base64-encoded audio buffer synthesised by Deepgram Aura TTS. The client plays this using `expo-av`. The TTS call is non-blocking to the structured JSON response — both are returned in the same Edge Function response body:
 
 ```json
 {
-  "action": "propose_expense | ask_clarification",
+  "action": "record_expense | ask_clarification",
   "payload": { ... },
   "ttsAudio": "<base64-mp3>"
 }
