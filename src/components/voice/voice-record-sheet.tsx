@@ -1,18 +1,18 @@
-import React, { useRef, useEffect } from 'react';
+import { useVoiceSession } from '@/hooks/use-voice-session';
+import { AlertTriangle, Mic, Sparkles, X } from 'lucide-react-native';
+import { useEffect, useRef } from 'react';
 import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  Pressable,
-  StyleSheet,
   ActivityIndicator,
   Animated,
-  ScrollView,
+  Modal,
+  Pressable,
   SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Mic, X, Sparkles, AlertTriangle } from 'lucide-react-native';
-import { useVoiceSession } from '@/hooks/use-voice-session';
 import { ClarificationView } from './clarification-view';
 import { ExpenseConfirmationCard } from './expense-confirmation-card';
 

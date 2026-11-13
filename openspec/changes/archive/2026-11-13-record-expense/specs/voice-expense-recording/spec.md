@@ -7,24 +7,24 @@ Enables users to record a financial expense by speaking naturally; the system ex
 ## ADDED Requirements
 
 ### Requirement: Voice capture initiates expense recording
-The app SHALL provide a push-to-talk (hold-to-speak) control that captures microphone audio and streams it in real time to Deepgram Nova-3 STT via WebSocket while the user is holding the control.
+The app SHALL provide a push-to-talk (hold-to-speak) control that records microphone audio locally while held, and sends the audio buffer to the Supabase Edge Function upon release. The Edge Function SHALL transcribe the audio using the official Deepgram JavaScript SDK (`@deepgram/sdk`) with model `nova-3` and `smart_format: true`.
 
 #### Scenario: User holds mic button
 - **WHEN** the user presses and holds the voice record button
-- **THEN** the system opens a Deepgram STT WebSocket connection and begins streaming PCM audio, displaying an interim live transcript on screen
+- **THEN** the system begins recording microphone audio locally and displays recording feedback on screen
 
 #### Scenario: User releases mic button
 - **WHEN** the user releases the voice record button
-- **THEN** the system closes the audio stream, finalises the transcript, and forwards it to the expense AI pipeline
+- **THEN** the system finalises the audio recording, transmits the audio payload to the Edge Function, transcribes it via the Deepgram JS SDK (`nova-3`), and forwards the transcript to the expense AI pipeline
 
 #### Scenario: Microphone permission denied
 - **WHEN** the user attempts to initiate voice recording without microphone permission granted
-- **THEN** the system SHALL display an error message and NOT attempt to open an audio stream
+- **THEN** the system SHALL display an error message and NOT attempt to record audio
 
 ---
 
 ### Requirement: AI extracts expense entities from transcript
-The AI pipeline in the Supabase Edge Function SHALL attempt to extract the following fields from the transcript: `amount`, `description`, `categoryId`, `budgetId`, `spendingType`, and `dateSpent`.
+The AI pipeline in the Supabase Edge Function SHALL process the transcript using the official OpenAI TypeScript SDK Responses API (`openai.responses.create`) with model `gpt-5-nano` and attempt to extract the following fields: `amount`, `description`, `categoryId`, `budgetId`, `spendingType`, and `dateSpent`.
 
 #### Scenario: All entities present in one utterance
 - **WHEN** the transcript contains a recognisable amount, description, category or budget reference, and spending intent
@@ -113,15 +113,19 @@ On user confirmation the system SHALL commit the expense to the database in a si
 
 ---
 
-### Requirement: AI spoken feedback via Deepgram Aura TTS
-The Edge Function SHALL generate a short spoken summary using Deepgram Aura TTS after each successful `record_expense` resolution and after each `ask_clarification` question, returning the audio to the client for playback.
+### Requirement: AI spoken feedback via Deepgram Aura-2 TTS (JS SDK)
+The Edge Function SHALL synthesize a short spoken summary using the official Deepgram JavaScript SDK (`@deepgram/sdk`) with model `aura-2-thalia-en` after each successful `record_expense` resolution and after each `ask_clarification` question, returning base64 MP3 audio to the client for playback.
 
 #### Scenario: Proposal spoken summary
 - **WHEN** `record_expense` is called with all required fields
-- **THEN** the Edge Function SHALL generate and return a TTS audio buffer summarising the proposed expense (e.g., "Got it! ₱210 for Starbucks coffee under Daily Food.")
+- **THEN** the Edge Function SHALL validate non-empty text, invoke `deepgram.speak.request`, consume the returned audio stream, and return a base64 MP3 audio string summarising the proposed expense (e.g., "Got it! ₱210 for Starbucks coffee under Daily Food.")
 - **AND** the client SHALL play the audio before or while the confirmation card renders
 
 #### Scenario: Clarification question spoken aloud
 - **WHEN** `ask_clarification` is called
-- **THEN** the Edge Function SHALL return the clarification question as a TTS audio buffer
+- **THEN** the Edge Function SHALL validate non-empty text, synthesize speech with `aura-2-thalia-en`, and return the question as a base64 MP3 audio string
 - **AND** the client SHALL play the audio and simultaneously display the question text and any `suggestedOptions` chips
+
+#### Scenario: TTS synthesis failure
+- **WHEN** Deepgram TTS fails or text is empty
+- **THEN** the Edge Function SHALL log the error and return an empty `ttsAudio` string without failing the assistant chat response

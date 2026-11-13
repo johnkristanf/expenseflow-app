@@ -27,9 +27,9 @@ The app is a greenfield Expo SDK 58 / React Native project (`expenseflow-app`) b
 
 ### Decision 1: Audio Transport — WebSocket Streaming vs Push-to-Talk Buffer
 
-**Chosen: Push-to-Talk One-Shot Buffer**
+**Chosen: Push-to-Talk One-Shot Buffer with Deepgram JS SDK**
 
-The user holds the mic button, the Expo audio module records locally into memory, and the full audio buffer is sent to the Edge Function once the user releases the button. The Edge Function sends it to Deepgram STT REST API and returns the final transcript.
+The user holds the mic button, the Expo audio module records locally into memory, and the full audio buffer is sent to the Edge Function once the user releases the button. The Edge Function transcribes the audio using the official Deepgram JavaScript SDK (`@deepgram/sdk`) with model `nova-3` and `smart_format: true`, returning the final transcript to the reasoning pipeline.
 
 **Alternatives considered:**
 - *Live WebSocket Streaming directly to Deepgram from client* — requires the Deepgram API key to be reachable from the mobile client (or proxied), adds WebSocket keep-alive complexity on mobile radios, and provides no meaningful UX benefit for short expense utterances (5–15 seconds). Rejected.
@@ -69,9 +69,9 @@ The Edge Function's system prompt explicitly frames the user's speech as an answ
 
 ---
 
-### Decision 3: AI Tool Schema — Two Exclusive Tools
+### Decision 3: AI Reasoning & Tool Schema — OpenAI TypeScript SDK Responses API (`gpt-5-nano`)
 
-The Edge Function provides OpenAI with exactly two tools and instructs it to call one per turn:
+The Edge Function uses the official OpenAI TypeScript SDK (`npm:openai`) and the Responses API (`openai.responses.create`) with model `gpt-5-nano`. It configures exactly two function tools:
 
 | Tool | Called when |
 |------|------------|
@@ -80,7 +80,7 @@ The Edge Function provides OpenAI with exactly two tools and instructs it to cal
 
 `ask_clarification` returns: `{ question: string; missingEntity: string; suggestedOptions?: string[] }`.
 
-The Edge Function routes on `tool_calls[0].function.name` — no ambiguity.
+The Edge Function routes on the tool call returned in the response output — no ambiguity.
 
 ---
 
@@ -116,9 +116,9 @@ If `budgetId` is null, only the INSERT runs. The RPC enforces RLS so only the au
 
 ---
 
-### Decision 6: TTS Feedback via Deepgram Aura
+### Decision 6: TTS Feedback via Deepgram Aura-2
 
-After every Edge Function response (whether `record_expense` or `ask_clarification`), the function also returns a base64-encoded audio buffer synthesised by Deepgram Aura TTS. The client plays this using `expo-av`. The TTS call is non-blocking to the structured JSON response — both are returned in the same Edge Function response body:
+After every Edge Function response (whether `record_expense` or `ask_clarification`), the function synthesizes spoken audio using Deepgram Aura-2 (`aura-2-thalia-en`) via the Deepgram JS SDK. The client plays this using `expo-audio`. The TTS call is non-blocking to the structured JSON response — both are returned in the same Edge Function response body:
 
 ```json
 {
@@ -127,6 +127,34 @@ After every Edge Function response (whether `record_expense` or `ask_clarificati
   "ttsAudio": "<base64-mp3>"
 }
 ```
+
+---
+
+### Decision 7: Deepgram Integration via Official JavaScript SDK (`@deepgram/sdk`)
+
+Rather than maintaining manual `fetch` calls, authentication headers, and ad-hoc endpoint strings, the Edge Function integrates the official Deepgram JavaScript SDK configured in `supabase/functions/deno.json`:
+
+```json
+{
+  "imports": {
+    "@deepgram/sdk": "npm:@deepgram/sdk@^3.11.0"
+  }
+}
+```
+
+The shared module `supabase/functions/_shared/deepgram.ts` structures API usage following Deepgram agent skills best practices:
+
+1. **Client Instantiation**: Created per-request with `createClient(apiKey)`.
+2. **Speech-to-Text (`transcribeAudio`)**:
+   - Converts the incoming base64 mobile recording into a `Uint8Array`.
+   - Invokes `deepgram.listen.prerecorded.transcribeFile` with `model: "nova-3"`, `smart_format: true`, and `mimetype: "audio/m4a"`.
+   - Extracts `result?.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() || ""`.
+   - Logs structured Deepgram error metadata if transcription fails.
+3. **Text-to-Speech (`synthesizeSpeech`)**:
+   - Input validation: Trims text and guards against empty string inputs (which Deepgram rejects with HTTP 400).
+   - Voice model: Uses Aura-2 `aura-2-thalia-en` via `deepgram.speak.request({ text }, { model: "aura-2-thalia-en" })`.
+   - Audio extraction: Calls `response.getStream()`, consumes the `ReadableStream` into a binary buffer, and converts it to base64.
+   - Fault tolerance: Any TTS failure logs a warning and returns an empty string without failing the assistant chat response.
 
 ---
 

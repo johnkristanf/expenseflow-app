@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "skills": {
+    "deepgram-js-audio-intelligence": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-audio-intelligence/SKILL.md",
+      "computedHash": "7999901f63f1af3bac9e9fbaa91a8d01484597442b6fc5d107bf1c93b2965873"
+    },
+    "deepgram-js-conversational-stt": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-conversational-stt/SKILL.md",
+      "computedHash": "ea2c70d57ebc1d620702022ca32ade78ae5266add0712b6380df79278fb32b33"
+    },
+    "deepgram-js-management-api": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-management-api/SKILL.md",
+      "computedHash": "4298eb8d2a0f2dc79a5f5e0b4dbe92321d355626eac433b76b50b0a92851bc34"
+    },
+    "deepgram-js-speech-to-text": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-speech-to-text/SKILL.md",
+      "computedHash": "137ff5261c6127435f1d58548f9f6b697835896c41cad89eaa3cc8bfc1e0ddc6"
+    },
+    "deepgram-js-text-intelligence": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-text-intelligence/SKILL.md",
+      "computedHash": "0e89e876a7523d382251e600fa4980d41093bd07dad526b21a7780d8ab913462"
+    },
+    "deepgram-js-text-to-speech": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-text-to-speech/SKILL.md",
+      "computedHash": "8e71aa65b041ed06f5dc72e02a2548606893ccee1741f14c35177a9a86934f17"
+    },
+    "deepgram-js-voice-agent": {
+      "source": "deepgram/deepgram-js-sdk",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/deepgram-js-voice-agent/SKILL.md",
+      "computedHash": "fd5a36f93cecc8840789f12e9d82473925503e94eb8cb4489dfc2cb8bcf69b3b"
+    },
+    "speech-to-text": {
+      "source": "deepgram/skills",
+      "sourceType": "github",
+      "skillPath": "skills/speech-to-text/SKILL.md",
+      "computedHash": "4335b19344bb6b016b37cbba6dd4297b2818345406b9525ecaf161175eaeacc0"
+    },
+    "text-to-speech": {
+      "source": "deepgram/skills",
+      "sourceType": "github",
+      "skillPath": "skills/text-to-speech/SKILL.md",
+      "computedHash": "d9ff58977be2df8f92b34f57d74c1b3f075f23f89b784de4e4e6a15f3d4d24cb"
+    }
+  }
+}

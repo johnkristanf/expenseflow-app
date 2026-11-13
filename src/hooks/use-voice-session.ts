@@ -1,14 +1,14 @@
-import { useState, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useExpenseDraft } from '@/hooks/use-expense-draft';
-import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
 import { useTTSPlayer } from '@/hooks/use-tts-player';
+import { useVoiceRecorder } from '@/hooks/use-voice-recorder';
+import { supabase } from '@/lib/supabase';
 import {
   AssistantChatResponse,
   ClarificationPayload,
   RecordExpensePayload,
 } from '@/types/expense';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 
 export type VoiceSessionStatus =
   | 'idle'
@@ -45,6 +45,11 @@ export function useVoiceSession() {
       setErrorMessage(null);
 
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          throw new Error('Please sign in to your account to record voice expenses.');
+        }
+
         const { data, error } = await supabase.functions.invoke<AssistantChatResponse>(
           'assistant-chat',
           {
@@ -56,7 +61,14 @@ export function useVoiceSession() {
         );
 
         if (error || !data) {
-          throw new Error(error?.message || 'Failed to communicate with assistant');
+          let detailedMsg = error?.message || 'Failed to communicate with assistant';
+          if (error && 'context' in error && error.context) {
+            try {
+              const body = await (error as any).context.json();
+              if (body?.error) detailedMsg = body.error;
+            } catch (_) {}
+          }
+          throw new Error(detailedMsg);
         }
 
         if (data.transcript) {
