@@ -1,6 +1,6 @@
 import { useVoiceSession } from '@/hooks/use-voice-session';
 import { AlertTriangle, Mic, Sparkles, X } from 'lucide-react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -23,7 +23,7 @@ interface VoiceRecordSheetProps {
 
 export function VoiceRecordSheet({ visible, onClose }: VoiceRecordSheetProps) {
   const session = useVoiceSession();
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(1));
 
   // Pulse animation when recording
   useEffect(() => {
@@ -92,7 +92,7 @@ export function VoiceRecordSheet({ visible, onClose }: VoiceRecordSheetProps) {
             {session.transcript ? (
               <View style={styles.transcriptBox}>
                 <Text style={styles.transcriptLabel}>You said:</Text>
-                <Text style={styles.transcriptText}>"{session.transcript}"</Text>
+                <Text style={styles.transcriptText}>&ldquo;{session.transcript}&rdquo;</Text>
               </View>
             ) : null}
 

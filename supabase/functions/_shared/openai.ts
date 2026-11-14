@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { ASSISTANT_TOOLS } from "./constants.ts";
 import { loadPrompt, renderPrompt } from "./prompt-loader.ts";
 import type {
   AssistantReasoningResult,
@@ -6,49 +7,7 @@ import type {
   UserFinancialContext,
 } from "./types.ts";
 
-export const ASSISTANT_TOOLS: OpenAI.Responses.Tool[] = [
-  {
-    type: "function",
-    name: "record_expense",
-    description: "Propose the recorded expense when required fields (amount, description) are identified.",
-    strict: false,
-    parameters: {
-      type: "object",
-      properties: {
-        amount: { type: "number", description: "Expense amount" },
-        description: { type: "string", description: "Clean merchant or item description" },
-        spendingType: {
-          type: "string",
-          enum: ["needs", "wants"],
-          description: "Whether this expense is a need or want",
-        },
-        dateSpent: { type: "string", description: "YYYY-MM-DD format" },
-        categoryId: { type: "number", description: "Matched category ID from user's categories list" },
-        budgetId: { type: "number", description: "Matched budget ID from user's budgets list (optional/nullable)" },
-      },
-      required: ["amount", "description", "spendingType", "dateSpent"],
-    },
-  },
-  {
-    type: "function",
-    name: "ask_clarification",
-    description: "Ask a short question when amount, description, or category/budget is missing or ambiguous.",
-    strict: false,
-    parameters: {
-      type: "object",
-      properties: {
-        question: { type: "string", description: "Short conversational question to speak to user" },
-        missingEntity: { type: "string", enum: ["amount", "description", "category", "budget"] },
-        suggestedOptions: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional quick-choice options (e.g. category names)",
-        },
-      },
-      required: ["question", "missingEntity"],
-    },
-  },
-];
+export { ASSISTANT_TOOLS };
 
 async function buildSystemPrompt(userContext: UserFinancialContext, activeDraft: ExpenseDraft): Promise<string> {
   const template = await loadPrompt("expense-assistant.md");
@@ -58,6 +17,7 @@ async function buildSystemPrompt(userContext: UserFinancialContext, activeDraft:
     currentDate: todayStr,
     categories: JSON.stringify(userContext.categories, null, 2),
     budgets: JSON.stringify(userContext.budgets, null, 2),
+    recentExpenses: JSON.stringify(userContext.recentExpenses, null, 2),
     affinityMap: JSON.stringify(userContext.affinityMap, null, 2),
     activeDraft: JSON.stringify(activeDraft, null, 2),
   });
@@ -85,6 +45,7 @@ export async function generateAssistantResponse({
     instructions: systemPrompt,
     input: transcript,
     tools: ASSISTANT_TOOLS,
+    tool_choice: "required",
   });
 
   // Extract function tool call from Responses API output items
@@ -93,7 +54,7 @@ export async function generateAssistantResponse({
   ) as { name: string; arguments: string } | undefined;
 
   if (functionCall) {
-    const action = functionCall.name as "record_expense" | "ask_clarification";
+    const action = functionCall.name as AssistantReasoningResult["action"];
     let payload = JSON.parse(functionCall.arguments || "{}");
     let spokenText = "";
 
@@ -101,6 +62,12 @@ export async function generateAssistantResponse({
       payload = { ...activeDraft, ...payload };
       const budgetName = userContext.budgets.find((b) => b.id === payload.budgetId)?.name;
       spokenText = `Recorded ₱${payload.amount} for ${payload.description}${budgetName ? ` under ${budgetName}` : ""}.`;
+    } else if (action === "query_expenses") {
+      spokenText = "Here are the expense records you requested:";
+    } else if (action === "update_expense") {
+      spokenText = `Please confirm updating this expense.`;
+    } else if (action === "delete_expense") {
+      spokenText = `Are you sure you want to delete this expense?`;
     } else {
       spokenText = payload.question || "Could you clarify that?";
     }

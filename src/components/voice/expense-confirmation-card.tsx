@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
 } from 'react-native';
 import { Check, X, Tag, PieChart, Calendar, AlertCircle } from 'lucide-react-native';
 import { supabase } from '@/lib/supabase';
@@ -30,7 +29,7 @@ export function ExpenseConfirmationCard({
   const [spendingType, setSpendingType] = useState<'needs' | 'wants'>(
     initialDraft.spendingType || 'needs'
   );
-  const [dateSpent, setDateSpent] = useState<string>(
+  const [dateSpent] = useState<string>(
     initialDraft.dateSpent || new Date().toISOString().split('T')[0]
   );
   const [categoryId, setCategoryId] = useState<number | null>(initialDraft.categoryId ?? null);

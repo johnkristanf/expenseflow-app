@@ -1,5 +1,11 @@
 // @ts-nocheck — Deno Edge Function: runtime globals (Deno) provided by Deno runtime.
+import { EXPENSE_ASSISTANT_PROMPT } from "./prompts/expense-assistant.ts";
+
 const promptCache = new Map<string, string>();
+
+const BUILTIN_PROMPTS: Record<string, string> = {
+  "expense-assistant.md": EXPENSE_ASSISTANT_PROMPT,
+};
 
 /**
  * Loads a markdown prompt file relative to the `prompts/` directory.
@@ -10,6 +16,11 @@ export async function loadPrompt(fileName: string): Promise<string> {
 
   if (promptCache.has(cleanName)) {
     return promptCache.get(cleanName)!;
+  }
+
+  if (BUILTIN_PROMPTS[cleanName]) {
+    promptCache.set(cleanName, BUILTIN_PROMPTS[cleanName]);
+    return BUILTIN_PROMPTS[cleanName];
   }
 
   try {

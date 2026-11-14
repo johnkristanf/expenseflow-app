@@ -8,7 +8,7 @@ export async function fetchUserFinancialContext(supabase: SupabaseClient): Promi
   const [categoriesRes, budgetsRes, recentExpensesRes] = await Promise.all([
     supabase.from("categories").select("id, name, notes").order("name"),
     supabase.from("budgets").select("id, name, current_amount, total_amount").order("name"),
-    supabase.from("expenses").select("description, category_id, budget_id").order("created_at", { ascending: false }).limit(20),
+    supabase.from("expenses").select("id, description, amount, date_spent, category_id, budget_id").order("created_at", { ascending: false }).limit(20),
   ]);
 
   const categories: Category[] = categoriesRes.data || [];
@@ -29,6 +29,7 @@ export async function fetchUserFinancialContext(supabase: SupabaseClient): Promi
   return {
     categories,
     budgets,
+    recentExpenses,
     affinityMap,
   };
 }

@@ -21,7 +21,10 @@ export interface Budget {
 }
 
 export interface RecentExpense {
+  id: number;
   description: string | null;
+  amount: number;
+  date_spent: string;
   category_id: number | null;
   budget_id: number | null;
 }
@@ -31,17 +34,25 @@ export type AffinityMap = Record<string, { categoryId?: number | null; budgetId?
 export interface UserFinancialContext {
   categories: Category[];
   budgets: Budget[];
+  recentExpenses: RecentExpense[];
   affinityMap: AffinityMap;
 }
 
+export type AssistantActionType =
+  | "record_expense"
+  | "query_expenses"
+  | "update_expense"
+  | "delete_expense"
+  | "ask_clarification";
+
 export interface AssistantReasoningResult {
-  action: "record_expense" | "ask_clarification";
+  action: AssistantActionType;
   payload: Record<string, any>;
   spokenText: string;
 }
 
 export interface AssistantChatResponse {
-  action: "record_expense" | "ask_clarification";
+  action: AssistantActionType;
   payload: Record<string, any>;
   transcript: string;
   ttsAudio: string;

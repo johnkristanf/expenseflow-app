@@ -10,7 +10,7 @@ export function useTTSPlayer() {
       try {
         playerRef.current.pause();
         playerRef.current.remove();
-      } catch (_e) {
+      } catch {
         // Ignore unloading errors
       } finally {
         playerRef.current = null;
