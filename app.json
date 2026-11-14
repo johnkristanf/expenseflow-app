@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/expenseflow-icon.png",
+      "bundleIdentifier": "com.johnkristan01.expenseflowapp",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "ExpenseFlow needs microphone access to record and transcribe your voice expenses."
       }
@@ -50,7 +51,15 @@
           "imageWidth": 76
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.GOOGLE_IOS_CLIENT_ID"
+        }
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
